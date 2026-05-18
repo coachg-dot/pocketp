@@ -5,13 +5,12 @@ workflows:
     environment:
       node: 20
       xcode: latest
-      cocoapods: default
 
     scripts:
       - npm install
       - npm run build
       - npx cap sync ios
-      - xcodebuild -workspace App.xcworkspace -scheme App -sdk iphonesimulator -configuration Debug build
+      - xcodebuild -project ios/App/App.xcodeproj -scheme App -sdk iphonesimulator -configuration Debug build
 
     artifacts:
       - ios/App/build/**/*.app
