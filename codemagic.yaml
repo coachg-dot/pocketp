@@ -3,20 +3,15 @@ workflows:
     name: Ionic iOS Workflow
 
     environment:
-      node: latest
+      node: 20
       xcode: latest
       cocoapods: default
 
     scripts:
       - npm install
-      - npm install -g @ionic/cli
       - npm run build
       - npx cap sync ios
+      - xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
 
     artifacts:
-      - ios/App/build/**/*.ipa
-
-    publishing:
-      email:
-        recipients:
-          - coachg@guptelpa.com
+      - build/ios/ipa/*.ipa
