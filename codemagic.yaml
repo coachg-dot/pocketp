@@ -3,7 +3,7 @@ workflows:
     name: Ionic iOS Workflow
 
     integrations:
-      app_store_connect: PP051326
+      app_store_connect: PocketPitcher
 
     environment:
       node: latest
