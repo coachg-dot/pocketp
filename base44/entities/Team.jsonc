@@ -1,0 +1,24 @@
+{
+  "name": "Team",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Team name"
+    },
+    "location": {
+      "type": "string",
+      "description": "City or school name"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the user who created this team"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

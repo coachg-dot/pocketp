@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 25% 97%;
+    --foreground: 220 30% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 10%;
+    --primary: 220 70% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 15% 93%;
+    --secondary-foreground: 220 20% 25%;
+    --muted: 220 15% 95%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 42 90% 50%;
+    --accent-foreground: 42 90% 12%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 220 70% 30%;
+    --radius: 0.75rem;
+    --chart-1: 220 70% 40%;
+    --chart-2: 42 90% 50%;
+    --chart-3: 200 70% 50%;
+    --chart-4: 280 60% 55%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 220 70% 30%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 220 70% 30%;
+  }
+
+  .dark {
+    --background: 222 28% 9%;
+    --foreground: 210 20% 96%;
+    --card: 222 25% 13%;
+    --card-foreground: 210 20% 96%;
+    --popover: 222 25% 13%;
+    --popover-foreground: 210 20% 96%;
+    --primary: 220 70% 55%;
+    --primary-foreground: 222 28% 9%;
+    --secondary: 222 20% 18%;
+    --secondary-foreground: 210 15% 85%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 210 10% 55%;
+    --accent: 42 90% 50%;
+    --accent-foreground: 42 90% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 18% 20%;
+    --input: 222 18% 20%;
+    --ring: 220 70% 55%;
+    --chart-1: 220 70% 55%;
+    --chart-2: 42 90% 50%;
+    --chart-3: 200 70% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 222 28% 9%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 220 70% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 20% 16%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 222 18% 20%;
+    --sidebar-ring: 220 70% 55%;
+  }
+}
+
+@layer base {
+  html, body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  input,
+  textarea {
+    text-transform: uppercase;
+  }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  /* Prevent text selection & tap highlight on interactive UI elements */
+  button,
+  [role="tab"],
+  [role="tablist"],
+  nav,
+  nav * {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Minimum 44×44 px tap targets for all buttons and icon links */
+  button, [role="button"], [role="tab"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ─── Safe area utilities ─────────────────────────── */
+.pt-safe  { padding-top:    env(safe-area-inset-top,    0px); }
+.pb-safe  { padding-bottom: env(safe-area-inset-bottom, 0px); }
+/* Bottom nav height (56px) + gesture area */
+.pb-safe-nav {
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+}
+/* Used on the nav bar itself */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ─── Baseball diamond custom styles ─────────────── */
+.diamond-field {
+  background: linear-gradient(180deg, hsl(220 40% 25%) 0%, hsl(220 45% 18%) 100%);
+}
+.diamond-infield {
+  background: hsl(30 40% 55%);
+}
+
+.touch-target {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}

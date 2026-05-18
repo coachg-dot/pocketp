@@ -1,0 +1,97 @@
+{
+  "name": "Pitch",
+  "type": "object",
+  "properties": {
+    "game_id": {
+      "type": "string"
+    },
+    "at_bat_id": {
+      "type": "string"
+    },
+    "pitcher_id": {
+      "type": "string",
+      "description": "ID or name of the pitcher"
+    },
+    "pitcher_name": {
+      "type": "string",
+      "description": "Name of the pitcher who threw this pitch"
+    },
+    "player_id": {
+      "type": "string",
+      "description": "Batter ID"
+    },
+    "player_name": {
+      "type": "string",
+      "description": "Batter name"
+    },
+    "batter_hand": {
+      "type": "string",
+      "description": "Batter handedness (R/L)"
+    },
+    "inning": {
+      "type": "number"
+    },
+    "pitch_number": {
+      "type": "number",
+      "description": "Sequence number within the at-bat (1, 2, 3...)"
+    },
+    "pitch_type": {
+      "type": "string",
+      "enum": [
+        "4seam",
+        "2seam",
+        "fastball",
+        "sinker",
+        "cutter",
+        "slider",
+        "sweeper",
+        "slurve",
+        "curveball",
+        "knuckle_curve",
+        "changeup",
+        "splitter",
+        "screwball",
+        "forkball",
+        "knuckleball",
+        "eephus"
+      ]
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "ball",
+        "called_strike",
+        "swinging_strike",
+        "foul",
+        "foul_tip",
+        "in_play_out",
+        "in_play_hit",
+        "hit_by_pitch"
+      ]
+    },
+    "at_bat_result": {
+      "type": "string",
+      "description": "Final result of the at-bat this pitch belongs to"
+    },
+    "zone": {
+      "type": "number",
+      "description": "Strike zone location (1-9, 11-14 for chase zones)"
+    },
+    "hit_location_x": {
+      "type": "number"
+    },
+    "hit_location_y": {
+      "type": "number"
+    },
+    "earned_runs": {
+      "type": "number",
+      "default": 0,
+      "description": "Cumulative earned runs for this pitcher in this game"
+    }
+  },
+  "required": [
+    "game_id",
+    "pitch_type",
+    "result"
+  ]
+}

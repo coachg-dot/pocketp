@@ -1,0 +1,45 @@
+{
+  "name": "Player",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "number": {
+      "type": "number"
+    },
+    "position": {
+      "type": "string"
+    },
+    "bats": {
+      "type": "string",
+      "enum": [
+        "R",
+        "L",
+        "S"
+      ],
+      "description": "Batting hand: R, L, or Switch"
+    },
+    "throws": {
+      "type": "string",
+      "enum": [
+        "R",
+        "L"
+      ],
+      "description": "Throwing hand"
+    },
+    "pitch_repertoire": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of pitch types this pitcher throws"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

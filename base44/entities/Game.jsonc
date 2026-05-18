@@ -1,0 +1,40 @@
+{
+  "name": "Game",
+  "type": "object",
+  "properties": {
+    "opponent": {
+      "type": "string",
+      "description": "Name of the opposing team"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "location": {
+      "type": "string",
+      "description": "Home or Away"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "final"
+      ],
+      "default": "in_progress",
+      "description": "Game status"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "opponent",
+    "date"
+  ],
+  "rls": {
+    "read": "creator_only",
+    "create": true,
+    "update": "creator_only",
+    "delete": "creator_only"
+  }
+}

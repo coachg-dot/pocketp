@@ -1,0 +1,112 @@
+{
+  "name": "AtBat",
+  "type": "object",
+  "properties": {
+    "game_id": {
+      "type": "string"
+    },
+    "player_id": {
+      "type": "string"
+    },
+    "player_name": {
+      "type": "string"
+    },
+    "pitcher_name": {
+      "type": "string",
+      "description": "Name of the pitcher who faced this batter"
+    },
+    "jersey_number": {
+      "type": "string"
+    },
+    "inning": {
+      "type": "number"
+    },
+    "lineup_position": {
+      "type": "number"
+    },
+    "result": {
+      "type": "string",
+      "enum": [
+        "single",
+        "double",
+        "triple",
+        "home_run",
+        "walk",
+        "hbp",
+        "sac_fly",
+        "sac_bunt",
+        "bunt_single",
+        "bunt_out",
+        "rbi_groundout",
+        "groundout",
+        "flyout",
+        "lineout",
+        "popout",
+        "strikeout_swinging",
+        "strikeout_looking",
+        "fielders_choice",
+        "error",
+        "double_play",
+        "triple_play"
+      ]
+    },
+    "balls": {
+      "type": "number"
+    },
+    "strikes": {
+      "type": "number"
+    },
+    "hit_location_x": {
+      "type": "number"
+    },
+    "hit_location_y": {
+      "type": "number"
+    },
+    "is_pinch_hitter": {
+      "type": "boolean",
+      "default": false
+    },
+    "rbis": {
+      "type": "number",
+      "default": 0
+    },
+    "earned_runs": {
+      "type": "number",
+      "default": 0,
+      "description": "Earned runs scored in this at-bat, attributed to the responsible pitcher"
+    },
+    "runners_on_base": {
+      "type": "string",
+      "enum": [
+        "none",
+        "first",
+        "second",
+        "third",
+        "first_second",
+        "first_third",
+        "second_third",
+        "bases_loaded"
+      ],
+      "default": "none",
+      "description": "Runner situation when batter came up"
+    },
+    "error_fielder": {
+      "type": "string",
+      "description": "Name or position of the fielder who committed the error"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "game_id",
+    "player_id",
+    "result"
+  ],
+  "rls": {
+    "read": "creator_only",
+    "create": true,
+    "update": "creator_only",
+    "delete": "creator_only"
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "name": "TeamPlayer",
+  "type": "object",
+  "properties": {
+    "team_id": {
+      "type": "string",
+      "description": "Reference to Team"
+    },
+    "name": {
+      "type": "string"
+    },
+    "number": {
+      "type": "string"
+    },
+    "position": {
+      "type": "string"
+    },
+    "bats": {
+      "type": "string",
+      "enum": [
+        "R",
+        "L",
+        "S"
+      ]
+    },
+    "throws": {
+      "type": "string",
+      "enum": [
+        "R",
+        "L"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    },
+    "stats_avg": {
+      "type": "number",
+      "description": "Batting average"
+    },
+    "stats_obp": {
+      "type": "number",
+      "description": "On-base percentage"
+    },
+    "stats_slg": {
+      "type": "number",
+      "description": "Slugging percentage"
+    },
+    "stats_ops": {
+      "type": "number",
+      "description": "OPS"
+    },
+    "stats_ab": {
+      "type": "number",
+      "description": "At bats"
+    },
+    "stats_r": {
+      "type": "number",
+      "description": "Runs"
+    },
+    "stats_h": {
+      "type": "number",
+      "description": "Hits"
+    },
+    "stats_2b": {
+      "type": "number",
+      "description": "Doubles"
+    },
+    "stats_3b": {
+      "type": "number",
+      "description": "Triples"
+    },
+    "stats_hr": {
+      "type": "number",
+      "description": "Home runs"
+    },
+    "stats_rbi": {
+      "type": "number",
+      "description": "RBI"
+    },
+    "stats_bb": {
+      "type": "number",
+      "description": "Walks"
+    },
+    "stats_so": {
+      "type": "number",
+      "description": "Strikeouts"
+    },
+    "stats_sb": {
+      "type": "number",
+      "description": "Stolen bases"
+    },
+    "stats_gp": {
+      "type": "number",
+      "description": "Games played"
+    },
+    "stats_source_url": {
+      "type": "string",
+      "description": "URL stats were scraped from"
+    },
+    "stats_updated": {
+      "type": "string",
+      "description": "Date stats were last updated"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the user who created this record"
+    }
+  },
+  "required": [
+    "team_id",
+    "name"
+  ]
+}

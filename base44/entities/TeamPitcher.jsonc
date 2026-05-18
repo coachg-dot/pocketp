@@ -1,0 +1,41 @@
+{
+  "name": "TeamPitcher",
+  "type": "object",
+  "properties": {
+    "team_id": {
+      "type": "string",
+      "description": "Reference to Team"
+    },
+    "name": {
+      "type": "string"
+    },
+    "number": {
+      "type": "string"
+    },
+    "throws": {
+      "type": "string",
+      "enum": [
+        "R",
+        "L"
+      ]
+    },
+    "pitch_repertoire": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of pitch types this pitcher throws"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "owner_email": {
+      "type": "string",
+      "description": "Email of the user who created this record"
+    }
+  },
+  "required": [
+    "team_id",
+    "name"
+  ]
+}
