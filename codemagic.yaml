@@ -10,7 +10,7 @@ workflows:
     scripts:
       - npm install
       - npm install -g @ionic/cli
-      - ionic build
+      - npm run build
       - npx cap sync ios
 
     artifacts:
@@ -20,4 +20,3 @@ workflows:
       email:
         recipients:
           - coachg@guptelpa.com
-
