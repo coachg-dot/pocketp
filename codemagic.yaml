@@ -1,0 +1,23 @@
+workflows:
+  ionic-ios-workflow:
+    name: Ionic iOS Workflow
+
+    environment:
+      node: latest
+      xcode: latest
+      cocoapods: default
+
+    scripts:
+      - npm install
+      - npm install -g @ionic/cli
+      - ionic build
+      - npx cap sync ios
+
+    artifacts:
+      - ios/App/build/**/*.ipa
+
+    publishing:
+      email:
+        recipients:
+          - coachg@guptelpa.com
+
