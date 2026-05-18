@@ -11,8 +11,6 @@ workflows:
       - npm install
       - npm run build
       - npx cap sync ios
-      - cd ios/App
-      - pod install
       - xcodebuild -workspace App.xcworkspace -scheme App -sdk iphonesimulator -configuration Debug build
 
     artifacts:
