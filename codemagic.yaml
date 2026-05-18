@@ -3,16 +3,21 @@ workflows:
     name: Ionic iOS Workflow
 
     environment:
-      node: 20
+      node: latest
       xcode: latest
       cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.guptelpa.pocketpitcher
 
     scripts:
       - npm install
       - npm run build
       - npx cap sync ios
       - cd ios/App && pod install
-      - xcodebuild -workspace ios/App/App.xcworkspace -scheme App -sdk iphonesimulator -configuration Debug build
+      - cd ../..
+      - xcode-project use-profiles
+      - xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
 
     artifacts:
-      - ios/App/build/**/*.app
+      - build/ios/ipa/*.ipa
