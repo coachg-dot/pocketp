@@ -2,6 +2,9 @@ workflows:
   ionic-ios-workflow:
     name: Ionic iOS Workflow
 
+    integrations:
+      app_store_connect: PP051326
+
     environment:
       node: latest
       xcode: latest
