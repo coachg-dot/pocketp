@@ -20,6 +20,8 @@ workflows:
       - cd ios/App && pod install
       - cd ../..
       - xcode-project use-profiles
+      - /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 4" ios/App/App/Info.plist
+      - /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" ios/App/App/Info.plist
       - xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
 
     artifacts:
@@ -29,3 +31,4 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
+```
