@@ -1,123 +1,89 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { appParams } from '@/lib/app-params';
 import { setCachedUserId } from '@/lib/pitcherRepertoireStore';
-import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+
+// Detect Capacitor native context
+const isCapacitorNative = typeof window !== 'undefined' &&
+  (window.Capacitor?.isNativePlatform?.() ||
+   window.location?.protocol === 'capacitor:' ||
+   window.location?.protocol === 'ionic:');
+
+// Safe return URL for auth redirects — capacitor:// is not valid for web auth flows
+const getReturnUrl = () => {
+  if (isCapacitorNative) {
+    return typeof import.meta !== 'undefined' && import.meta.env?.VITE_BASE44_APP_BASE_URL
+      ? import.meta.env.VITE_BASE44_APP_BASE_URL
+      : 'https://base44.com';
+  }
+  return window.location.href;
+};
 
 const AuthContext = createContext();
+
+// STARTUP_TIMEOUT: hard deadline for the entire auth check.
+// Must be < 3s to satisfy Apple's launch stability requirement.
+// 2500ms leaves 500ms headroom before Apple's cutoff. [v2 — capacitor-safe]
+const STARTUP_TIMEOUT_MS = 2500;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(true);
+  // Kept for API compatibility — always resolves immediately now
+  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
   const [authError, setAuthError] = useState(null);
-  const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const [appPublicSettings] = useState(null);
+  const didResolve = useRef(false);
 
-  useEffect(() => {
-    checkAppState();
-  }, []);
-
-  const checkAppState = async () => {
-    try {
-      setIsLoadingPublicSettings(true);
-      setAuthError(null);
-      
-      // First, check app public settings (with token if available)
-      // This will tell us if auth is required, user not registered, etc.
-      const appClient = createAxiosClient({
-        baseURL: `/api/apps/public`,
-        headers: {
-          'X-App-Id': appParams.appId
-        },
-        token: appParams.token, // Include token if available
-        interceptResponses: true
-      });
-      
-      try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
-        setAppPublicSettings(publicSettings);
-        
-        // Always attempt auth check — the SDK manages its own token internally.
-        // Don't gate on appParams.token which may be null even when the SDK has a valid stored token.
-        await checkUserAuth();
-        setIsLoadingPublicSettings(false);
-      } catch (appError) {
-        console.error('App state check failed:', appError);
-        
-        // Handle app-level errors
-        if (appError.status === 403 && appError.data?.extra_data?.reason) {
-          const reason = appError.data.extra_data.reason;
-          if (reason === 'auth_required') {
-            setAuthError({
-              type: 'auth_required',
-              message: 'Authentication required'
-            });
-          } else if (reason === 'user_not_registered') {
-            setAuthError({
-              type: 'user_not_registered',
-              message: 'User not registered for this app'
-            });
-          } else {
-            setAuthError({
-              type: reason,
-              message: appError.message
-            });
-          }
-        } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
-        }
-        setIsLoadingPublicSettings(false);
-        setIsLoadingAuth(false);
+  const resolveAuth = (userData, error) => {
+    if (didResolve.current) return;
+    didResolve.current = true;
+    setIsLoadingAuth(false);
+    setIsLoadingPublicSettings(false);
+    if (userData) {
+      setUser(userData);
+      setIsAuthenticated(true);
+      if (userData.id || userData.email) {
+        setCachedUserId(userData.id || userData.email);
       }
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      setAuthError({
-        type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
-      });
-      setIsLoadingPublicSettings(false);
-      setIsLoadingAuth(false);
+    } else {
+      setAuthError(error || { type: 'auth_required', message: 'Authentication required' });
+      setIsAuthenticated(false);
     }
   };
 
-  const checkUserAuth = async () => {
+  useEffect(() => {
+    // Hard-cap: no matter what, resolve after STARTUP_TIMEOUT_MS.
+    // This is the last line of defense against any hang.
+    const hardCap = setTimeout(() => {
+      console.warn('[PP] AuthContext hard cap fired — forcing auth_required');
+      resolveAuth(null, { type: 'auth_required', message: 'Startup timeout' });
+    }, STARTUP_TIMEOUT_MS);
+
+    checkAuth().finally(() => clearTimeout(hardCap));
+  }, []);
+
+  const checkAuth = async () => {
     try {
-      // On mobile after Google OAuth redirect, the access_token arrives in the URL.
-      // app-params.js stores it in localStorage synchronously, but the SDK instance
-      // may have been created before that write happened. We explicitly read the
-      // latest token from localStorage (checking both possible keys) and push it
-      // into the SDK so it uses the fresh post-redirect token, not a stale/null one.
+      // Inject any access_token that arrived in the URL (OAuth redirect)
       const storedToken =
         window.localStorage?.getItem('base44_access_token') ||
         window.localStorage?.getItem('base44_token');
       if (storedToken) {
-        base44.auth.setToken(storedToken, false); // inject without re-saving
+        base44.auth.setToken(storedToken, false);
       }
 
-      setIsLoadingAuth(true);
+      // Single call — base44.auth.me() uses the SDK's absolute server URL.
+      // No custom axios client, no relative paths, no settings fetch.
       const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      setIsAuthenticated(true);
-      // Scope localStorage keys to this user so different accounts on the same device stay isolated
-      if (currentUser?.id || currentUser?.email) {
-        setCachedUserId(currentUser.id || currentUser.email);
-      }
-      setIsLoadingAuth(false);
+      resolveAuth(currentUser, null);
     } catch (error) {
-      console.error('User auth check failed:', error);
-      setIsLoadingAuth(false);
-      setIsAuthenticated(false);
-      
-      // If user auth fails, it might be an expired token
-      if (error.status === 401 || error.status === 403) {
-        setAuthError({
-          type: 'auth_required',
-          message: 'Authentication required'
-        });
+      console.error('[PP] base44.auth.me() failed:', error?.status, error?.message);
+      if (error?.status === 403 && error?.data?.extra_data?.reason === 'user_not_registered') {
+        resolveAuth(null, { type: 'user_not_registered', message: 'User not registered' });
+      } else {
+        // 401, network error, timeout — always redirect to login
+        resolveAuth(null, { type: 'auth_required', message: 'Authentication required' });
       }
     }
   };
@@ -125,25 +91,28 @@ export const AuthProvider = ({ children }) => {
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
-    
     if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
+      base44.auth.logout(getReturnUrl());
     } else {
-      // Just remove the token without redirect
       base44.auth.logout();
     }
   };
 
   const navigateToLogin = () => {
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    base44.auth.redirectToLogin(getReturnUrl());
+  };
+
+  // checkAppState kept for backward compatibility with any component that calls it
+  const checkAppState = async () => {
+    didResolve.current = false;
+    setIsLoadingAuth(true);
+    await checkAuth();
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAuthenticated, 
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated,
       isLoadingAuth,
       isLoadingPublicSettings,
       authError,
