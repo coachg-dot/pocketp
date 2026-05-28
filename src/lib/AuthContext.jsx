@@ -2,9 +2,9 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { setCachedUserId } from '@/lib/pitcherRepertoireStore';
 
-// Detect Capacitor native context — evaluated once at module load time.
-// Cast a wide net: any of these signals means we're inside a native WebView.
-// window.Capacitor existing at all (even before plugins load) is a reliable signal.
+// ─── Native detection — evaluated synchronously at module load time ───────────
+// window.Capacitor is injected by the Capacitor bridge before any JS runs.
+// Checking typeof (not optional chaining) catches it even before plugins init.
 const isCapacitorNative =
   typeof window !== 'undefined' &&
   (
@@ -13,6 +13,8 @@ const isCapacitorNative =
     window.location?.protocol === 'capacitor:' ||
     window.location?.protocol === 'ionic:'
   );
+
+console.log('[PP] isCapacitorNative =', isCapacitorNative, '| protocol =', typeof window !== 'undefined' ? window.location?.protocol : 'N/A');
 
 // Safe return URL — capacitor:// is rejected by the auth server
 const getReturnUrl = () => {
@@ -24,21 +26,24 @@ const getReturnUrl = () => {
 
 const AuthContext = createContext(null);
 
-// 1500 ms hard cap — if auth.me() hangs, fail open to login screen
+// 1500 ms hard cap for web — if auth.me() hangs, fail open to login screen
 const STARTUP_TIMEOUT_MS = 1500;
 
 export const AuthProvider = ({ children }) => {
+  // ─── CRITICAL: On native, start with isLoadingAuth=false immediately ─────
+  // If we start as true and flip in useEffect, the first render shows the
+  // splash/auth-check screen — that IS the flash loop. Starting false means
+  // the very first render on native goes straight to the login screen.
   const [user,            setUser           ] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth,   setIsLoadingAuth  ] = useState(true);
+  const [isLoadingAuth,   setIsLoadingAuth  ] = useState(!isCapacitorNative);
   const [authError,       setAuthError      ] = useState(null);
 
-  // API-compat stubs (always-resolved, nothing fetches settings any more)
+  // API-compat stubs
   const [isLoadingPublicSettings] = useState(false);
   const [appPublicSettings]       = useState(null);
 
-  // didRun — ensures the startup auth check fires exactly once,
-  // even under React StrictMode double-invocation
+  // didRun — ensures the startup auth check fires exactly once
   const didRun = useRef(false);
 
   const resolveAuth = (userData, error) => {
@@ -54,25 +59,20 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Strict guard — runs exactly once per app lifetime.
     if (didRun.current) return;
     didRun.current = true;
 
     // ─── NATIVE iOS / Capacitor ───────────────────────────────────────────────
-    // base44.auth.me() hangs indefinitely in the Capacitor WebView during cold
-    // launch — the SDK makes an HTTPS request that never resolves before iOS
-    // kills the launch watchdog. Skip it entirely and go straight to login.
-    // The user will tap "Sign In" to start the OAuth flow manually.
+    // NO auth check on native. NO redirectToLogin. NO retry.
+    // isLoadingAuth is already false from useState initializer above.
+    // Just log and return — the login screen renders from the initial state.
     if (isCapacitorNative) {
-      console.log('[PP] Native launch — skipping auth.me(), showing login immediately');
-      setIsLoadingAuth(false);
-      setIsAuthenticated(false);
-      setUser(null);
-      // null authError = show login screen (not an error state, just logged-out)
+      console.log('[PP] AUTH SKIPPED FOR NATIVE — stable login screen shown');
+      // State is already: isLoadingAuth=false, isAuthenticated=false, user=null
       return;
     }
 
-    // ─── Web browser ─────────────────────────────────────────────────────────
+    // ─── Web browser only ─────────────────────────────────────────────────────
     console.log('[PP] Web launch — running auth check');
 
     let resolved = false;
@@ -121,12 +121,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Only called when the USER taps "Sign In" — never called automatically
+  // Only called when the USER taps "Sign In" — NEVER called automatically
   const navigateToLogin = () => {
     base44.auth.redirectToLogin(getReturnUrl());
   };
 
-  // Manual re-check (e.g. after returning from OAuth) — does NOT restart the hard cap
+  // Manual re-check (e.g. after returning from OAuth) — web only
   const checkAppState = async () => {
     setIsLoadingAuth(true);
     setAuthError(null);
