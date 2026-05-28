@@ -1,3 +1,5 @@
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClientInstance } from './lib/query-client';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 
 function Home() {
@@ -10,17 +12,19 @@ function Home() {
       justifyContent: 'center',
       alignItems: 'center'
     }}>
-      Router Works
+      QueryClient Works
     </div>
   );
 }
 
 export default function App() {
   return (
-    <HashRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-      </Routes>
-    </HashRouter>
+    <QueryClientProvider client={queryClientInstance}>
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+        </Routes>
+      </HashRouter>
+    </QueryClientProvider>
   );
 }
