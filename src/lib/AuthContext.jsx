@@ -2,12 +2,17 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { setCachedUserId } from '@/lib/pitcherRepertoireStore';
 
-// Detect Capacitor native context — evaluated once at module load time
+// Detect Capacitor native context — evaluated once at module load time.
+// Cast a wide net: any of these signals means we're inside a native WebView.
+// window.Capacitor existing at all (even before plugins load) is a reliable signal.
 const isCapacitorNative =
   typeof window !== 'undefined' &&
-  (window.Capacitor?.isNativePlatform?.() ||
-   window.location?.protocol === 'capacitor:' ||
-   window.location?.protocol === 'ionic:');
+  (
+    typeof window.Capacitor !== 'undefined' ||
+    window.Capacitor?.isNativePlatform?.() ||
+    window.location?.protocol === 'capacitor:' ||
+    window.location?.protocol === 'ionic:'
+  );
 
 // Safe return URL — capacitor:// is rejected by the auth server
 const getReturnUrl = () => {
