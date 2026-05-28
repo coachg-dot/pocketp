@@ -49,16 +49,27 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Strict guard — runs once per app lifetime, never on re-render or route change.
-    // AuthProvider must be mounted ABOVE the router so location changes cannot
-    // unmount/remount it (which would re-trigger this effect and cause a flash loop).
+    // Strict guard — runs exactly once per app lifetime.
     if (didRun.current) return;
     didRun.current = true;
 
-    console.log('[PP] AuthContext: starting auth check (cap=' + STARTUP_TIMEOUT_MS + 'ms)');
+    // ─── NATIVE iOS / Capacitor ───────────────────────────────────────────────
+    // base44.auth.me() hangs indefinitely in the Capacitor WebView during cold
+    // launch — the SDK makes an HTTPS request that never resolves before iOS
+    // kills the launch watchdog. Skip it entirely and go straight to login.
+    // The user will tap "Sign In" to start the OAuth flow manually.
+    if (isCapacitorNative) {
+      console.log('[PP] Native launch — skipping auth.me(), showing login immediately');
+      setIsLoadingAuth(false);
+      setIsAuthenticated(false);
+      setUser(null);
+      // null authError = show login screen (not an error state, just logged-out)
+      return;
+    }
 
-    // Hard timeout — fires if auth.me() never resolves (common in Capacitor WebView
-    // when no network or the SDK hangs on capacitor:// protocol resolution)
+    // ─── Web browser ─────────────────────────────────────────────────────────
+    console.log('[PP] Web launch — running auth check');
+
     let resolved = false;
     const hardCap = setTimeout(() => {
       if (resolved) return;
@@ -69,25 +80,21 @@ export const AuthProvider = ({ children }) => {
 
     (async () => {
       try {
-        // Restore token written by the OAuth redirect handler
         const storedToken =
           window.localStorage?.getItem('base44_access_token') ||
           window.localStorage?.getItem('base44_token');
         if (storedToken) {
           base44.auth.setToken(storedToken, false);
         }
-
         const currentUser = await base44.auth.me();
-        if (resolved) return; // hard cap already fired
+        if (resolved) return;
         resolved = true;
         clearTimeout(hardCap);
-        console.log('[PP] auth.me() succeeded:', currentUser?.email);
         resolveAuth(currentUser, null);
       } catch (err) {
         if (resolved) return;
         resolved = true;
         clearTimeout(hardCap);
-        console.warn('[PP] auth.me() failed:', err?.status, err?.message);
         if (err?.status === 403 &&
             err?.data?.extra_data?.reason === 'user_not_registered') {
           resolveAuth(null, { type: 'user_not_registered', message: 'User not registered' });
@@ -96,10 +103,8 @@ export const AuthProvider = ({ children }) => {
         }
       }
     })();
-
-    // No cleanup needed — hardCap is cleared inside the async fn
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ← empty: runs once on mount, never re-runs
+  }, []);
 
   const logout = (shouldRedirect = true) => {
     setUser(null);
