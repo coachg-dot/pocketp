@@ -1,16 +1,18 @@
 import { createClient } from '@base44/sdk';
 import { appParams } from '@/lib/app-params';
 
-// IMPORTANT: Do NOT pass token here. The SDK reads its own stored token from localStorage
-// automatically on every request. Passing appParams.token (captured once at module load)
-// can result in a stale null token being sent, overwriting the SDK's valid stored token.
-// If a fresh access_token arrived in the URL, appParams.token will have it and we pass it
-// so the SDK can store it; otherwise we omit it entirely.
+// CAPACITOR NOTE: serverUrl must be an absolute https URL. [v2 — capacitor-safe]
+// An empty string or relative path resolves to capacitor://localhost/...
+// which is a dead protocol in the native WebView — all API calls silently fail.
+// The SDK uses VITE_BASE44_APP_BASE_URL (injected at build time) as its server root.
+// We never pass `token` from appParams here unless a fresh one arrived via URL redirect,
+// because a stale null value would overwrite the SDK's valid stored token.
 export const base44 = createClient({
   appId: appParams.appId,
   ...(appParams.token ? { token: appParams.token } : {}),
   functionsVersion: appParams.functionsVersion,
-  serverUrl: '',
+  // DO NOT pass serverUrl: '' — let the SDK use its built-in absolute base URL.
+  // Passing empty string forces relative paths which break in Capacitor native WebView.
   requiresAuth: true,
   appBaseUrl: appParams.appBaseUrl,
 });
