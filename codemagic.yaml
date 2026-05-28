@@ -20,7 +20,7 @@ workflows:
       - cd ios/App && pod install
       - cd ../..
       - xcode-project use-profiles
-      - /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 9" ios/App/App/Info.plist
+      - /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 10" ios/App/App/Info.plist
       - /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" ios/App/App/Info.plist
       - xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
 
