@@ -2,50 +2,46 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { setCachedUserId } from '@/lib/pitcherRepertoireStore';
 
-// Detect Capacitor native context
-const isCapacitorNative = typeof window !== 'undefined' &&
+// Detect Capacitor native context — evaluated once at module load time
+const isCapacitorNative =
+  typeof window !== 'undefined' &&
   (window.Capacitor?.isNativePlatform?.() ||
    window.location?.protocol === 'capacitor:' ||
    window.location?.protocol === 'ionic:');
 
-// Safe return URL for auth redirects — capacitor:// is not valid for web auth flows
+// Safe return URL — capacitor:// is rejected by the auth server
 const getReturnUrl = () => {
   if (isCapacitorNative) {
-    return typeof import.meta !== 'undefined' && import.meta.env?.VITE_BASE44_APP_BASE_URL
-      ? import.meta.env.VITE_BASE44_APP_BASE_URL
-      : 'https://base44.com';
+    return import.meta.env?.VITE_BASE44_APP_BASE_URL || 'https://base44.com';
   }
   return window.location.href;
 };
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-// STARTUP_TIMEOUT: hard deadline for the entire auth check.
-// Must be < 3s to satisfy Apple's launch stability requirement.
-// 2500ms leaves 500ms headroom before Apple's cutoff. [v2 — capacitor-safe]
-const STARTUP_TIMEOUT_MS = 2500;
+// 1500 ms hard cap — if auth.me() hangs, fail open to login screen
+const STARTUP_TIMEOUT_MS = 1500;
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user,            setUser           ] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  // Kept for API compatibility — always resolves immediately now
-  const [isLoadingPublicSettings, setIsLoadingPublicSettings] = useState(false);
-  const [authError, setAuthError] = useState(null);
-  const [appPublicSettings] = useState(null);
-  const didResolve = useRef(false);
+  const [isLoadingAuth,   setIsLoadingAuth  ] = useState(true);
+  const [authError,       setAuthError      ] = useState(null);
+
+  // API-compat stubs (always-resolved, nothing fetches settings any more)
+  const [isLoadingPublicSettings] = useState(false);
+  const [appPublicSettings]       = useState(null);
+
+  // didRun — ensures the startup auth check fires exactly once,
+  // even under React StrictMode double-invocation
+  const didRun = useRef(false);
 
   const resolveAuth = (userData, error) => {
-    if (didResolve.current) return;
-    didResolve.current = true;
     setIsLoadingAuth(false);
-    setIsLoadingPublicSettings(false);
     if (userData) {
       setUser(userData);
       setIsAuthenticated(true);
-      if (userData.id || userData.email) {
-        setCachedUserId(userData.id || userData.email);
-      }
+      setCachedUserId(userData.id || userData.email || '');
     } else {
       setAuthError(error || { type: 'auth_required', message: 'Authentication required' });
       setIsAuthenticated(false);
@@ -53,40 +49,57 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Hard-cap: no matter what, resolve after STARTUP_TIMEOUT_MS.
-    // This is the last line of defense against any hang.
+    // Strict guard — runs once per app lifetime, never on re-render or route change.
+    // AuthProvider must be mounted ABOVE the router so location changes cannot
+    // unmount/remount it (which would re-trigger this effect and cause a flash loop).
+    if (didRun.current) return;
+    didRun.current = true;
+
+    console.log('[PP] AuthContext: starting auth check (cap=' + STARTUP_TIMEOUT_MS + 'ms)');
+
+    // Hard timeout — fires if auth.me() never resolves (common in Capacitor WebView
+    // when no network or the SDK hangs on capacitor:// protocol resolution)
+    let resolved = false;
     const hardCap = setTimeout(() => {
-      console.warn('[PP] AuthContext hard cap fired — forcing auth_required');
+      if (resolved) return;
+      resolved = true;
+      console.warn('[PP] Auth hard cap fired — showing login');
       resolveAuth(null, { type: 'auth_required', message: 'Startup timeout' });
     }, STARTUP_TIMEOUT_MS);
 
-    checkAuth().finally(() => clearTimeout(hardCap));
-  }, []);
+    (async () => {
+      try {
+        // Restore token written by the OAuth redirect handler
+        const storedToken =
+          window.localStorage?.getItem('base44_access_token') ||
+          window.localStorage?.getItem('base44_token');
+        if (storedToken) {
+          base44.auth.setToken(storedToken, false);
+        }
 
-  const checkAuth = async () => {
-    try {
-      // Inject any access_token that arrived in the URL (OAuth redirect)
-      const storedToken =
-        window.localStorage?.getItem('base44_access_token') ||
-        window.localStorage?.getItem('base44_token');
-      if (storedToken) {
-        base44.auth.setToken(storedToken, false);
+        const currentUser = await base44.auth.me();
+        if (resolved) return; // hard cap already fired
+        resolved = true;
+        clearTimeout(hardCap);
+        console.log('[PP] auth.me() succeeded:', currentUser?.email);
+        resolveAuth(currentUser, null);
+      } catch (err) {
+        if (resolved) return;
+        resolved = true;
+        clearTimeout(hardCap);
+        console.warn('[PP] auth.me() failed:', err?.status, err?.message);
+        if (err?.status === 403 &&
+            err?.data?.extra_data?.reason === 'user_not_registered') {
+          resolveAuth(null, { type: 'user_not_registered', message: 'User not registered' });
+        } else {
+          resolveAuth(null, { type: 'auth_required', message: 'Authentication required' });
+        }
       }
+    })();
 
-      // Single call — base44.auth.me() uses the SDK's absolute server URL.
-      // No custom axios client, no relative paths, no settings fetch.
-      const currentUser = await base44.auth.me();
-      resolveAuth(currentUser, null);
-    } catch (error) {
-      console.error('[PP] base44.auth.me() failed:', error?.status, error?.message);
-      if (error?.status === 403 && error?.data?.extra_data?.reason === 'user_not_registered') {
-        resolveAuth(null, { type: 'user_not_registered', message: 'User not registered' });
-      } else {
-        // 401, network error, timeout — always redirect to login
-        resolveAuth(null, { type: 'auth_required', message: 'Authentication required' });
-      }
-    }
-  };
+    // No cleanup needed — hardCap is cleared inside the async fn
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← empty: runs once on mount, never re-runs
 
   const logout = (shouldRedirect = true) => {
     setUser(null);
@@ -98,15 +111,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Only called when the USER taps "Sign In" — never called automatically
   const navigateToLogin = () => {
     base44.auth.redirectToLogin(getReturnUrl());
   };
 
-  // checkAppState kept for backward compatibility with any component that calls it
+  // Manual re-check (e.g. after returning from OAuth) — does NOT restart the hard cap
   const checkAppState = async () => {
-    didResolve.current = false;
     setIsLoadingAuth(true);
-    await checkAuth();
+    setAuthError(null);
+    try {
+      const currentUser = await base44.auth.me();
+      resolveAuth(currentUser, null);
+    } catch {
+      resolveAuth(null, { type: 'auth_required', message: 'Authentication required' });
+    }
   };
 
   return (
@@ -119,7 +138,7 @@ export const AuthProvider = ({ children }) => {
       appPublicSettings,
       logout,
       navigateToLogin,
-      checkAppState
+      checkAppState,
     }}>
       {children}
     </AuthContext.Provider>
@@ -128,8 +147,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
