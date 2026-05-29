@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClientInstance } from '@/lib/query-client';
@@ -29,8 +29,10 @@ const IS_NATIVE =
     window.location?.protocol === 'ionic:'
   );
 
-// ─── Login screen ──────────────────────────────────────────────────────────────
-function LoginScreen({ phase, onLogin }) {
+// ─── Login screen — static, memo'd, never auto-redirects ──────────────────────
+// Must remain completely inert until the user taps the button.
+// No useEffect, no setTimeout, no automatic calls to onLogin.
+const LoginScreen = React.memo(function LoginScreen({ onLogin }) {
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -53,7 +55,7 @@ function LoginScreen({ phase, onLogin }) {
         Pocket Pitcher
       </div>
       <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 32 }}>
-        {phase || 'Please sign in to continue'}
+        Please sign in to continue
       </div>
       <button
         onClick={onLogin}
@@ -68,7 +70,7 @@ function LoginScreen({ phase, onLogin }) {
       </button>
     </div>
   );
-}
+});
 
 // ─── Splash screen ─────────────────────────────────────────────────────────────
 function SplashScreen({ phase }) {
@@ -111,6 +113,11 @@ function SplashScreen({ phase }) {
 function AuthenticatedApp() {
   const { isLoadingAuth, isAuthenticated, authError, navigateToLogin } = useAuth();
 
+  // Stable callback — never changes identity, safe to pass to memo'd LoginScreen
+  const handleLogin = useCallback(() => {
+    navigateToLogin();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (isLoadingAuth) {
     return <SplashScreen phase="Authenticating..." />;
   }
@@ -119,15 +126,10 @@ function AuthenticatedApp() {
     if (authError?.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     }
-    const phase = IS_NATIVE
-      ? 'Sign in to use Pocket Pitcher'
-      : (authError?.message === 'Startup timeout'
-          ? 'Auth timeout — showing login'
-          : 'Please sign in to continue');
     return (
       <Routes>
         <Route path="/delete-account" element={<DeleteAccount />} />
-        <Route path="*" element={<LoginScreen phase={phase} onLogin={navigateToLogin} />} />
+        <Route path="*" element={<LoginScreen onLogin={handleLogin} />} />
       </Routes>
     );
   }
