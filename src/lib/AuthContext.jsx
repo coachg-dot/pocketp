@@ -43,9 +43,6 @@ export const AuthProvider = ({ children }) => {
   const [isLoadingPublicSettings] = useState(false);
   const [appPublicSettings]       = useState(null);
 
-  // didRun — ensures the startup auth check fires exactly once
-  const didRun = useRef(false);
-
   const resolveAuth = (userData, error) => {
     setIsLoadingAuth(false);
     if (userData) {
@@ -58,21 +55,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ─── Web-only startup auth check ─────────────────────────────────────────
+  // On native: zero useEffects, zero API calls, zero state mutations after mount.
+  // Initial state (isLoadingAuth=false, isAuthenticated=false, user=null) is the
+  // final state — identical to FakeAuthProvider. Nothing runs until user taps Sign In.
   useEffect(() => {
-    if (didRun.current) return;
-    didRun.current = true;
+    if (isCapacitorNative) return; // ← native: hard stop, no side-effects
 
-    // ─── NATIVE iOS / Capacitor ───────────────────────────────────────────────
-    // NO auth check on native. NO redirectToLogin. NO retry.
-    // isLoadingAuth is already false from useState initializer above.
-    // Just log and return — the login screen renders from the initial state.
-    if (isCapacitorNative) {
-      console.log('[PP] AUTH SKIPPED FOR NATIVE — stable login screen shown');
-      // State is already: isLoadingAuth=false, isAuthenticated=false, user=null
-      return;
-    }
-
-    // ─── Web browser only ─────────────────────────────────────────────────────
     console.log('[PP] Web launch — running auth check');
 
     let resolved = false;
