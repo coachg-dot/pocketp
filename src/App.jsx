@@ -111,54 +111,48 @@ function SplashScreen({ phase }) {
 
 // ─── Authenticated app shell ───────────────────────────────────────────────────
 function AuthenticatedApp() {
-  const { isLoadingAuth, isAuthenticated, authError, navigateToLogin } = useAuth();
-
-  // Stable callback — never changes identity, safe to pass to memo'd LoginScreen
-  const handleLogin = useCallback(() => {
-    navigateToLogin();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const { isLoadingAuth, isAuthenticated } = useAuth();
 
   if (isLoadingAuth) {
-    return <SplashScreen phase="Authenticating..." />;
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#071326',
+        color: 'white'
+      }}>
+        Loading
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
-    if (authError?.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    }
     return (
-      <Routes>
-        <Route path="/delete-account" element={<DeleteAccount />} />
-        <Route path="*" element={<LoginScreen onLogin={handleLogin} />} />
-      </Routes>
+      <div style={{
+        minHeight: '100vh',
+        background: '#071326',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        Login Screen Test
+      </div>
     );
   }
 
   return (
-    <Routes>
-      <Route path="/delete-account" element={<DeleteAccount />} />
-      <Route path="/" element={
-        <LayoutWrapper currentPageName={mainPageKey}>
-          <MainPage />
-        </LayoutWrapper>
-      } />
-      {Object.entries(Pages).map(([path, Page]) => (
-        <Route
-          key={path}
-          path={`/${path}`}
-          element={
-            <LayoutWrapper currentPageName={path}>
-              <Page />
-            </LayoutWrapper>
-          }
-        />
-      ))}
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+    <div style={{
+      minHeight: '100vh',
+      background: '#071326',
+      color: 'white',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center'
+    }}>
+      Authenticated
+    </div>
   );
-}
-
-// ─── Root ──────────────────────────────────────────────────────────────────────
+}// ─── Root ──────────────────────────────────────────────────────────────────────
 function App() {
   return (
     <QueryClientProvider client={queryClientInstance}>
