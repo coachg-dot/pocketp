@@ -1,3 +1,5 @@
+import React from 'react';
+
 export default function App() {
   return (
     <div style={{
@@ -8,7 +10,7 @@ export default function App() {
       justifyContent: 'center',
       alignItems: 'center'
     }}>
-      Pure App No Imports Test
+      React Import Test
     </div>
   );
 }
