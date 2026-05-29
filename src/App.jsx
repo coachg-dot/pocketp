@@ -157,13 +157,19 @@ function App() {
   return (
     <QueryClientProvider client={queryClientInstance}>
       <Router>
-        <AuthProvider>
-          <AuthenticatedApp />
-        </AuthProvider>
+        <div style={{
+          minHeight: '100vh',
+          background: '#071326',
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          No AuthProvider Test
+        </div>
       </Router>
       <Toaster />
     </QueryClientProvider>
   );
 }
-
 export default App;
