@@ -26,22 +26,37 @@ const getReturnUrl = () => {
 
 const AuthContext = createContext(null);
 
-// 1500 ms hard cap for web — if auth.me() hangs, fail open to login screen
+// ─── Native provider — zero hooks, zero side-effects, completely static ───────
+const NATIVE_AUTH_VALUE = {
+  user: null,
+  isAuthenticated: false,
+  isLoadingAuth: false,
+  isLoadingPublicSettings: false,
+  authError: null,
+  appPublicSettings: null,
+  logout: () => {},
+  navigateToLogin: () => base44.auth.redirectToLogin(getReturnUrl()),
+  checkAppState: async () => {},
+};
+
+function NativeAuthProvider({ children }) {
+  return (
+    <AuthContext.Provider value={NATIVE_AUTH_VALUE}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+// ─── Web provider — all hooks live here, never rendered on native ─────────────
 const STARTUP_TIMEOUT_MS = 1500;
 
-export const AuthProvider = ({ children }) => {
-  // ─── CRITICAL: On native, start with isLoadingAuth=false immediately ─────
-  // If we start as true and flip in useEffect, the first render shows the
-  // splash/auth-check screen — that IS the flash loop. Starting false means
-  // the very first render on native goes straight to the login screen.
+function WebAuthProvider({ children }) {
   const [user,            setUser           ] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth,   setIsLoadingAuth  ] = useState(!isCapacitorNative);
+  const [isLoadingAuth,   setIsLoadingAuth  ] = useState(true);
   const [authError,       setAuthError      ] = useState(null);
-
-  // API-compat stubs
-  const [isLoadingPublicSettings] = useState(false);
-  const [appPublicSettings]       = useState(null);
+  const [isLoadingPublicSettings]             = useState(false);
+  const [appPublicSettings]                   = useState(null);
 
   const resolveAuth = (userData, error) => {
     setIsLoadingAuth(false);
@@ -55,13 +70,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // ─── Web-only startup auth check ─────────────────────────────────────────
-  // On native: zero useEffects, zero API calls, zero state mutations after mount.
-  // Initial state (isLoadingAuth=false, isAuthenticated=false, user=null) is the
-  // final state — identical to FakeAuthProvider. Nothing runs until user taps Sign In.
   useEffect(() => {
-    if (isCapacitorNative) return; // ← native: hard stop, no side-effects
-
     console.log('[PP] Web launch — running auth check');
 
     let resolved = false;
@@ -110,12 +119,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Only called when the USER taps "Sign In" — NEVER called automatically
   const navigateToLogin = () => {
     base44.auth.redirectToLogin(getReturnUrl());
   };
 
-  // Manual re-check (e.g. after returning from OAuth) — web only
   const checkAppState = async () => {
     setIsLoadingAuth(true);
     setAuthError(null);
@@ -142,7 +149,10 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
+
+// ─── Public export — picks the right provider at module load time ─────────────
+export const AuthProvider = isCapacitorNative ? NativeAuthProvider : WebAuthProvider;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
