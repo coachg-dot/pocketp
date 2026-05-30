@@ -13,8 +13,6 @@ const IS_NATIVE =
     window.location?.protocol === 'ionic:'
   );
 
-// Web app is lazy-loaded only on web.
-// This prevents AuthContext/base44Client from loading on native startup.
 const WebApp = IS_NATIVE ? null : lazy(() => import('@/components/WebApp'));
 
 const NativeLoginScreen = React.memo(function NativeLoginScreen() {
@@ -23,19 +21,11 @@ const NativeLoginScreen = React.memo(function NativeLoginScreen() {
   function handleSignIn() {
     setSignInError('');
 
-    import('@/api/base44Client')
-      .then(({ base44 }) => {
-        const returnUrl = 'https://pocketpitcher26.base44.app/Home';
-
-        try {
-          base44.auth.redirectToLogin(returnUrl);
-        } catch (err) {
-          setSignInError(err?.message || 'Failed to open sign-in. Please try again.');
-        }
-      })
-      .catch((err) => {
-        setSignInError(err?.message || 'Failed to load sign-in. Please try again.');
-      });
+    try {
+      window.location.href = 'https://pocketpitcher26.base44.app/Home';
+    } catch (err) {
+      setSignInError(err?.message || 'Failed to open sign-in URL.');
+    }
   }
 
   return (
