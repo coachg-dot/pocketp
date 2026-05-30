@@ -2,6 +2,7 @@ import React from 'react';
 import { HashRouter as Router } from 'react-router-dom';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClientInstance } from '@/lib/query-client';
+import { Toaster } from '@/components/ui/toaster';
 
 export default function App() {
   return (
@@ -15,9 +16,10 @@ export default function App() {
           justifyContent: 'center',
           alignItems: 'center'
         }}>
-          QueryClient Test
+          Toaster Test
         </div>
       </Router>
+      <Toaster />
     </QueryClientProvider>
   );
 }
