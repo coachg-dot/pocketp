@@ -29,10 +29,7 @@ const NativeLoginScreen = React.memo(function NativeLoginScreen() {
     ]).then(([{ base44 }, { appParams }]) => {
       // Use the real deployed app URL stored in appParams (from VITE_BASE44_APP_BASE_URL).
       // This is the URL the platform redirects back to after OAuth login.
-      const returnUrl = appParams.appBaseUrl || import.meta.env?.VITE_BASE44_APP_BASE_URL;
-      if (!returnUrl) {
-        setSignInError('App URL not configured. Please contact support.');
-        return;
+     const returnUrl = 'https://pocketpitcher26.base44.app/Home';
       }
       try {
         base44.auth.redirectToLogin(returnUrl);
