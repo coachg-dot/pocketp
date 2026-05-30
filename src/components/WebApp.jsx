@@ -30,12 +30,23 @@ function SplashScreen({ phase }) {
       fontFamily: 'system-ui, -apple-system, Helvetica, sans-serif',
     }}>
       <svg width="80" height="80" viewBox="0 0 96 96" style={{ marginBottom: 20 }}>
-        <circle cx="48" cy="48" r="44" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="3"/>
-        <path d="M26 48 Q36 36 48 34 Q60 32 70 48 Q60 64 48 62 Q36 60 26 48Z"
-          fill="none" stroke="#60a5fa" strokeWidth="2" opacity="0.6"/>
-        <circle cx="48" cy="48" r="6" fill="#3b82f6"/>
-        <text x="48" y="53" textAnchor="middle"
-          style={{ fontSize: 14, fill: '#fff', fontWeight: 700, letterSpacing: 1 }}>PP</text>
+        <circle cx="48" cy="48" r="44" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="3" />
+        <path
+          d="M26 48 Q36 36 48 34 Q60 32 70 48 Q60 64 48 62 Q36 60 26 48Z"
+          fill="none"
+          stroke="#60a5fa"
+          strokeWidth="2"
+          opacity="0.6"
+        />
+        <circle cx="48" cy="48" r="6" fill="#3b82f6" />
+        <text
+          x="48"
+          y="53"
+          textAnchor="middle"
+          style={{ fontSize: 14, fill: '#fff', fontWeight: 700, letterSpacing: 1 }}
+        >
+          PP
+        </text>
       </svg>
       <div style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 4 }}>
         Pocket Pitcher
@@ -44,7 +55,8 @@ function SplashScreen({ phase }) {
         {phase || 'Loading...'}
       </div>
       <div style={{
-        width: 32, height: 32,
+        width: 32,
+        height: 32,
         border: '3px solid rgba(255,255,255,0.15)',
         borderTopColor: '#3b82f6',
         borderRadius: '50%',
@@ -67,25 +79,44 @@ const LoginScreen = React.memo(function LoginScreen({ onLogin }) {
       padding: '32px', textAlign: 'center',
     }}>
       <svg width="80" height="80" viewBox="0 0 96 96" style={{ marginBottom: 20 }}>
-        <circle cx="48" cy="48" r="44" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="3"/>
-        <path d="M26 48 Q36 36 48 34 Q60 32 70 48 Q60 64 48 62 Q36 60 26 48Z"
-          fill="none" stroke="#60a5fa" strokeWidth="2" opacity="0.6"/>
-        <circle cx="48" cy="48" r="6" fill="#3b82f6"/>
-        <text x="48" y="53" textAnchor="middle"
-          style={{ fontSize: 14, fill: '#fff', fontWeight: 700, letterSpacing: 1 }}>PP</text>
+        <circle cx="48" cy="48" r="44" fill="#1e3a5f" stroke="#3b82f6" strokeWidth="3" />
+        <path
+          d="M26 48 Q36 36 48 34 Q60 32 70 48 Q60 64 48 62 Q36 60 26 48Z"
+          fill="none"
+          stroke="#60a5fa"
+          strokeWidth="2"
+          opacity="0.6"
+        />
+        <circle cx="48" cy="48" r="6" fill="#3b82f6" />
+        <text
+          x="48"
+          y="53"
+          textAnchor="middle"
+          style={{ fontSize: 14, fill: '#fff', fontWeight: 700, letterSpacing: 1 }}
+        >
+          PP
+        </text>
       </svg>
+
       <div style={{ color: '#fff', fontSize: 22, fontWeight: 700, marginBottom: 6 }}>
         Pocket Pitcher
       </div>
+
       <div style={{ color: '#94a3b8', fontSize: 13, marginBottom: 32 }}>
         Please sign in to continue
       </div>
+
       <button
         onClick={onLogin}
         style={{
-          background: '#3b82f6', color: '#fff', border: 'none',
-          borderRadius: 14, padding: '16px 40px',
-          fontSize: 17, fontWeight: 700, cursor: 'pointer',
+          background: '#3b82f6',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 14,
+          padding: '16px 40px',
+          fontSize: 17,
+          fontWeight: 700,
+          cursor: 'pointer',
           WebkitTapHighlightColor: 'transparent',
         }}
       >
@@ -110,3 +141,46 @@ function AuthenticatedApp() {
     if (authError?.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     }
+
+    return (
+      <Routes>
+        <Route path="/delete-account" element={<DeleteAccount />} />
+        <Route path="*" element={<LoginScreen onLogin={handleLogin} />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route path="/delete-account" element={<DeleteAccount />} />
+      <Route
+        path="/"
+        element={
+          <LayoutWrapper currentPageName={mainPageKey}>
+            <MainPage />
+          </LayoutWrapper>
+        }
+      />
+      {Object.entries(Pages).map(([path, Page]) => (
+        <Route
+          key={path}
+          path={`/${path}`}
+          element={
+            <LayoutWrapper currentPageName={path}>
+              <Page />
+            </LayoutWrapper>
+          }
+        />
+      ))}
+      <Route path="*" element={<PageNotFound />} />
+    </Routes>
+  );
+}
+
+export default function WebApp() {
+  return (
+    <AuthProvider>
+      <AuthenticatedApp />
+    </AuthProvider>
+  );
+}
