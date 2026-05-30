@@ -20,7 +20,7 @@ scripts:
   - cd ios/App && pod install
   - cd ../..
   - xcode-project use-profiles
-  - /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 5" ios/App/App/Info.plist
+  - /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 56" ios/App/App/Info.plist
   - xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
 
     artifacts:
