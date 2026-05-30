@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Pocket Pitcher',
   webDir: 'dist',
   server: {
-    url: 'https://pocketpitcher26.base44.app',
+    url: 'https://pocketpitcher26.base44.app/Home',
     cleartext: false
   }
 };
