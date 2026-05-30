@@ -13,15 +13,15 @@ workflows:
         distribution_type: app_store
         bundle_identifier: com.guptelpa.pocketpitcher
 
-scripts:
-  - npm install
-  - npm run build
-  - npx cap sync ios
-  - cd ios/App && pod install
-  - cd ../..
-  - xcode-project use-profiles
-  - /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 58" ios/App/App/Info.plist
-  - xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
+    scripts:
+      - npm install
+      - npm run build
+      - npx cap sync ios
+      - cd ios/App && pod install
+      - cd ../..
+      - xcode-project use-profiles
+      - /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 56" ios/App/App/Info.plist
+      - xcode-project build-ipa --workspace ios/App/App.xcworkspace --scheme App
 
     artifacts:
       - build/ios/ipa/*.ipa
