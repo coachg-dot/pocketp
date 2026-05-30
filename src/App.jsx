@@ -19,10 +19,28 @@ const WebApp = !IS_NATIVE ? lazy(() => import('@/components/WebApp')) : null;
 
 // ─── Native login screen — pure static, zero SDK, zero hooks ─────────────────
 const NativeLoginScreen = React.memo(function NativeLoginScreen() {
+  const [signInError, setSignInError] = React.useState('');
+
   function handleSignIn() {
-    import('@/api/base44Client').then(({ base44 }) => {
-      const returnUrl = import.meta.env?.VITE_BASE44_APP_BASE_URL || 'https://base44.com';
-      base44.auth.redirectToLogin(returnUrl);
+    setSignInError('');
+    Promise.all([
+      import('@/api/base44Client'),
+      import('@/lib/app-params'),
+    ]).then(([{ base44 }, { appParams }]) => {
+      // Use the real deployed app URL stored in appParams (from VITE_BASE44_APP_BASE_URL).
+      // This is the URL the platform redirects back to after OAuth login.
+      const returnUrl = appParams.appBaseUrl || import.meta.env?.VITE_BASE44_APP_BASE_URL;
+      if (!returnUrl) {
+        setSignInError('App URL not configured. Please contact support.');
+        return;
+      }
+      try {
+        base44.auth.redirectToLogin(returnUrl);
+      } catch (err) {
+        setSignInError(err?.message || 'Failed to open sign-in. Please try again.');
+      }
+    }).catch(err => {
+      setSignInError(err?.message || 'Failed to load sign-in. Please try again.');
     });
   }
 
@@ -61,6 +79,14 @@ const NativeLoginScreen = React.memo(function NativeLoginScreen() {
       >
         Sign In
       </button>
+      {signInError ? (
+        <div style={{
+          marginTop: 16, color: '#f87171', fontSize: 13,
+          maxWidth: 280, lineHeight: 1.4,
+        }}>
+          {signInError}
+        </div>
+      ) : null}
     </div>
   );
 });
